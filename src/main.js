@@ -26,19 +26,12 @@ if (!gotTheLock) {
   app.on('second-instance', (event, commandLine, workingDirectory) => {
     console.log('');
     console.log('🔄 检测到重复启动尝试');
-    console.log('📋 自动显示剪贴板选择窗口');
+    console.log('🔔 显示系统通知提醒用户');
     console.log('💡 应用已在后台运行，无需重复启动');
     console.log('');
     
-    // 显示系统通知
+    // 只显示系统通知，不自动显示快速选择窗口
     showDuplicateStartupNotification();
-    
-    // 如果有剪贴板管理器实例，显示快速选择窗口
-    if (global.clipboardManager) {
-      global.clipboardManager.showQuickSelect();
-    } else {
-      console.log('⚠️  警告：全局剪贴板管理器实例不存在');
-    }
   });
 }
 
@@ -57,7 +50,7 @@ function showDuplicateStartupNotification() {
     
     const notification = new Notification({
       title: '剪贴板管理器',
-      body: '应用已在后台运行中，使用 Command+Shift+V 打开剪贴板',
+      body: '应用已在后台运行中。使用 Command+Shift+V 打开剪贴板，或点击此通知快速访问',
       silent: false
     });
     

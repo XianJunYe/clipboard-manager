@@ -12,13 +12,19 @@
 - 🎯 **系统托盘**: 后台运行，完全不干扰系统快捷键
 - 🔍 **搜索功能**: 在详细窗口中搜索历史内容
 
+## 📚 文档
+
+- 📥 **[安装指南](docs/INSTALL_GUIDE.md)** - 用户安装和配置说明
+- 🚀 **[发布指南](docs/RELEASE_GUIDE.md)** - 开发者发布流程
+- 🔧 **[故障排除](docs/TROUBLESHOOTING.md)** - 常见问题解决方案
+
 ## 安装和运行
 
 ### 用户安装
 
 如果你是普通用户，想要直接使用应用：
 
-📥 **[查看详细安装指南](INSTALL_GUIDE.md)**
+📥 **[查看详细安装指南](docs/INSTALL_GUIDE.md)**
 
 - 下载最新版本的 DMG 文件
 - 解决 macOS 安全警告
@@ -77,118 +83,20 @@ npm run dev
 - 退出应用时会自动恢复系统原有的快捷键
 - 图片内容会以 Base64 格式存储
 
-## 发布流程
+## 开发者
 
-### 环境准备
+### 构建和发布
 
-1. **安装发布依赖**
+详细的构建和发布流程请参考：📚 **[发布指南](docs/RELEASE_GUIDE.md)**
+
+快速命令：
 ```bash
-npm install --save-dev electron-builder
-npm install --save electron-updater
+# 构建应用
+npm run build-release
+
+# 发布到 GitHub
+./scripts/create-release.sh
 ```
-
-2. **配置 GitHub Token**
-```bash
-# 在 GitHub 生成 Personal Access Token (需要 repo 权限)
-export GH_TOKEN=your_github_token_here
-```
-
-3. **配置 package.json**
-```json
-{
-  "build": {
-    "appId": "com.yourname.clipboard-manager",
-    "productName": "ClipboardManager",
-    "directories": {
-      "output": "dist"
-    },
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": ["x64", "arm64"]
-        },
-        {
-          "target": "zip",
-          "arch": ["x64", "arm64"]
-        }
-      ],
-      "timestamp": false
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "YourGitHubUsername",
-      "repo": "clipboard-manager"
-    }
-  }
-}
-```
-
-### 发布步骤
-
-1. **更新版本号**
-```bash
-# 手动编辑 package.json 中的 version 字段
-# 或使用 npm version 命令
-npm version patch  # 1.0.0 -> 1.0.1
-npm version minor  # 1.0.0 -> 1.1.0
-npm version major  # 1.0.0 -> 2.0.0
-```
-
-2. **构建并发布**
-```bash
-# 构建并发布到 GitHub Releases
-npm run publish
-
-# 或者分步执行
-npm run build      # 仅构建
-npm run draft      # 构建并创建草稿版本
-```
-
-3. **发布 Release**
-```bash
-# 获取最新 release ID
-curl -H "Authorization: token $GH_TOKEN" \
-  https://api.github.com/repos/YourUsername/clipboard-manager/releases | \
-  jq '.[] | select(.tag_name == "v1.0.x") | .id'
-
-# 发布 release (将草稿改为正式版本)
-curl -X PATCH \
-  -H "Authorization: token $GH_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"draft": false}' \
-  https://api.github.com/repos/YourUsername/clipboard-manager/releases/RELEASE_ID
-```
-
-### 自动更新配置
-
-应用内已集成 `electron-updater`，支持以下功能：
-
-- **手动检查更新**: 通过系统托盘菜单"🔍 检查更新"
-- **自动下载**: 发现新版本后自动下载 ZIP 文件
-- **一键安装**: 下载完成后托盘菜单显示"🔄 重启并更新"选项
-
-### 开发模式测试更新
-
-创建 `dev-app-update.yml` 文件用于开发环境测试：
-```yaml
-owner: YourGitHubUsername
-repo: clipboard-manager
-provider: github
-```
-
-### 发布脚本说明
-
-- `npm run build`: 仅构建应用，不发布
-- `npm run draft`: 构建并创建 GitHub 草稿版本
-- `npm run publish`: 构建并直接发布到 GitHub Releases
-
-### 注意事项
-
-1. **文件格式**: macOS 自动更新需要 ZIP 格式，DMG 仅用于手动安装
-2. **代码签名**: 需要 Apple 开发者证书进行代码签名
-3. **版本管理**: 确保每次发布都增加版本号
-4. **测试流程**: 建议先发布草稿版本进行测试
 
 ## 开发计划
 

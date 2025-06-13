@@ -238,6 +238,7 @@ npm run dev
 
 ## 📝 版本历史
 
+- v1.0.4 - 修复 "Unable to find helper app" 错误，添加 helperBundleId 配置
 - v1.0.3 - 移除自动检查更新，保留手动更新功能
 - v1.0.2 - 完善自动更新功能，添加进度显示
 - v1.0.1 - 修复更新检测问题

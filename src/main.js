@@ -17,19 +17,8 @@ if (!gotTheLock) {
   console.log('💡 无需重复启动，应用已在后台为您服务！');
   console.log('');
   
-  // 显示系统通知
-  if (app.isReady()) {
-    showDuplicateStartupNotification();
-  } else {
-    app.whenReady().then(() => {
-      showDuplicateStartupNotification();
-    });
-  }
-  
-  // 延迟退出，确保通知能显示
-  setTimeout(() => {
-    app.quit();
-  }, 1000);
+  // 直接退出，不显示通知（因为第一个实例会处理）
+  app.quit();
 } else {
   console.log('✅ 获得单实例锁，应用正常启动');
   
@@ -57,23 +46,41 @@ if (!gotTheLock) {
 function showDuplicateStartupNotification() {
   const { Notification } = require('electron');
   
-  if (Notification.isSupported()) {
+  try {
+    // 检查通知是否支持
+    if (!Notification.isSupported()) {
+      console.log('📱 系统不支持通知功能');
+      return;
+    }
+    
+    console.log('📢 正在显示重复启动通知...');
+    
     const notification = new Notification({
       title: '剪贴板管理器',
-      body: '应用已在后台运行中\n使用 Command+Shift+V 打开剪贴板',
-      icon: path.join(__dirname, '../assets/a.png'),
-      silent: false,
-      urgency: 'normal'
+      body: '应用已在后台运行中，使用 Command+Shift+V 打开剪贴板',
+      silent: false
     });
     
     notification.on('click', () => {
+      console.log('🖱️  用户点击了通知');
       // 点击通知时显示剪贴板选择窗口
       if (global.clipboardManager) {
         global.clipboardManager.showQuickSelect();
       }
     });
     
+    notification.on('show', () => {
+      console.log('✅ 通知已显示');
+    });
+    
+    notification.on('close', () => {
+      console.log('❌ 通知已关闭');
+    });
+    
     notification.show();
+    
+  } catch (error) {
+    console.log('❌ 显示通知时出错:', error.message);
   }
 }
 
@@ -96,12 +103,15 @@ class ClipboardManager {
     }
   }
 
-  init() {
+  async init() {
     // 加载历史记录
     this.clipboardHistory = this.store.get('clipboardHistory', []);
     
     // 清理重复的历史记录
     this.deduplicateHistory();
+    
+    // 请求通知权限
+    await this.requestNotificationPermission();
     
     this.createTray();
     this.registerGlobalShortcuts();
@@ -112,6 +122,17 @@ class ClipboardManager {
     app.on('before-quit', () => {
       this.cleanup();
     });
+  }
+
+  async requestNotificationPermission() {
+    const { Notification } = require('electron');
+    
+    if (Notification.isSupported()) {
+      console.log('✅ 系统支持通知功能');
+      console.log('🔔 Electron 应用的通知权限由系统自动管理');
+    } else {
+      console.log('❌ 系统不支持通知功能');
+    }
   }
 
   deduplicateHistory() {
@@ -213,6 +234,10 @@ class ClipboardManager {
         click: () => this.showQuickSelect()
       },
       { type: 'separator' },
+      {
+        label: '🔔 测试通知',
+        click: () => this.testNotification()
+      },
       {
         label: '🔍 检查更新',
         click: () => this.manualCheckForUpdates()
@@ -656,6 +681,11 @@ class ClipboardManager {
   clearHistory() {
     this.clipboardHistory = [];
     this.store.set('clipboardHistory', []);
+  }
+
+  testNotification() {
+    console.log('🧪 测试通知功能...');
+    showDuplicateStartupNotification();
   }
 
   setupAutoUpdater() {

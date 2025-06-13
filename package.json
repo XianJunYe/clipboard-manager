@@ -5,6 +5,7 @@
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
+    "start-safe": "./scripts/start.sh",
     "dev": "electron . --dev",
     "build": "electron-builder",
     "build-packager": "rm -rf dist-packager && electron-packager . ClipboardManager --platform=darwin --arch=arm64 --out=dist-packager --overwrite --app-bundle-id=com.example.clipboardmanager",

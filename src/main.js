@@ -3,6 +3,30 @@ const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const Store = require('electron-store');
 
+// 单实例检测
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  console.log('🚫 应用已在运行中，退出当前实例');
+  console.log('💡 提示：剪贴板管理器已在后台运行，使用 Command+Shift+V 打开');
+  app.quit();
+} else {
+  console.log('✅ 获得单实例锁，应用正常启动');
+  
+  // 当尝试启动第二个实例时，聚焦到第一个实例
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    console.log('🔄 检测到重复启动，聚焦到现有实例');
+    console.log('📋 自动显示剪贴板选择窗口');
+    
+    // 如果有剪贴板管理器实例，显示快速选择窗口
+    if (global.clipboardManager) {
+      global.clipboardManager.showQuickSelect();
+    } else {
+      console.log('⚠️  警告：全局剪贴板管理器实例不存在');
+    }
+  });
+}
+
 class ClipboardManager {
   constructor() {
     this.store = new Store();
@@ -732,6 +756,8 @@ app.whenReady().then(() => {
   }
   
   clipboardManager = new ClipboardManager();
+  // 设置为全局变量，以便在 second-instance 事件中访问
+  global.clipboardManager = clipboardManager;
   clipboardManager.init();
 });
 

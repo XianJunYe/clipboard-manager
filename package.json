@@ -1,0 +1,87 @@
+{
+  "name": "clipboard-manager",
+  "version": "1.0.0",
+  "description": "一个强大的剪贴板管理工具",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder",
+    "pack": "electron-builder --dir",
+    "publish": "electron-builder --publish=always",
+    "draft": "electron-builder --publish=never"
+  },
+  "keywords": [
+    "clipboard",
+    "manager",
+    "electron",
+    "productivity"
+  ],
+  "author": "你的名字",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^25.0.0",
+    "electron-builder": "^24.0.0"
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.6.2",
+    "globalthis": "^1.0.3"
+  },
+  "build": {
+    "appId": "com.clipboardmanager.app",
+    "productName": "剪贴板管理器",
+    "directories": {
+      "output": "dist"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "你的GitHub用户名",
+        "repo": "你的仓库名"
+      }
+    ],
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "node_modules/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "extendInfo": {
+        "LSUIElement": true,
+        "CFBundleDisplayName": "剪贴板管理器",
+        "CFBundleName": "剪贴板管理器"
+      }
+    },
+    "dmg": {
+      "title": "剪贴板管理器安装包",
+      "background": null,
+      "window": {
+        "width": 540,
+        "height": 380
+      },
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  }
+}

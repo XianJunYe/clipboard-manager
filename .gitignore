@@ -6,6 +6,8 @@ yarn-error.log*
 
 # Build outputs
 dist/
+dist-packager/
+dist-release/
 build/
 out/
 

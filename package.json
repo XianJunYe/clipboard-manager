@@ -1,19 +1,23 @@
 {
   "name": "clipboard-manager",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "description": "一个强大的剪贴板管理工具",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder",
+    "build-packager": "rm -rf dist-packager && electron-packager . ClipboardManager --platform=darwin --arch=arm64 --out=dist-packager --overwrite --app-bundle-id=com.example.clipboardmanager",
+    "create-dmg": "mkdir -p dist-release && create-dmg dist-packager/ClipboardManager-darwin-arm64/ClipboardManager.app dist-release --overwrite",
+    "build-release": "npm run build-packager && npm run create-dmg",
     "pack": "electron-builder --dir",
     "publish": "electron-builder --publish=always",
     "draft": "electron-builder --publish=never",
     "release": "./scripts/release.sh",
     "release:patch": "./scripts/release.sh patch",
     "release:minor": "./scripts/release.sh minor",
-    "release:major": "./scripts/release.sh major"
+    "release:major": "./scripts/release.sh major",
+    "test-build": "electron-builder --dir --config.mac.identity=null"
   },
   "keywords": [
     "clipboard",
@@ -24,8 +28,10 @@
   "author": "你的名字",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^25.0.0",
-    "electron-builder": "^24.0.0"
+    "create-dmg": "^7.0.0",
+    "electron": "^22.3.27",
+    "electron-builder": "^24.0.0",
+    "electron-packager": "^17.1.2"
   },
   "dependencies": {
     "electron-store": "^8.1.0",
@@ -33,7 +39,7 @@
     "globalthis": "^1.0.3"
   },
   "build": {
-    "appId": "com.clipboardmanager.app",
+    "appId": "com.example.clipboardmanager",
     "productName": "ClipboardManager",
     "directories": {
       "output": "dist"
@@ -52,19 +58,10 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
-      "helperBundleId": "com.clipboardmanager.app.helper",
       "target": [
         {
-          "target": "dmg",
+          "target": "dir",
           "arch": [
-            "x64",
-            "arm64"
-          ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64",
             "arm64"
           ]
         }

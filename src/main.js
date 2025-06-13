@@ -7,16 +7,42 @@ const Store = require('electron-store');
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
-  console.log('🚫 应用已在运行中，退出当前实例');
-  console.log('💡 提示：剪贴板管理器已在后台运行，使用 Command+Shift+V 打开');
-  app.quit();
+  console.log('');
+  console.log('🚫 剪贴板管理器已在运行中');
+  console.log('');
+  console.log('📋 应用状态：后台运行中');
+  console.log('⌨️  快捷键：Command+Shift+V 打开剪贴板选择');
+  console.log('🖱️  托盘：点击菜单栏右上角的图标');
+  console.log('');
+  console.log('💡 无需重复启动，应用已在后台为您服务！');
+  console.log('');
+  
+  // 显示系统通知
+  if (app.isReady()) {
+    showDuplicateStartupNotification();
+  } else {
+    app.whenReady().then(() => {
+      showDuplicateStartupNotification();
+    });
+  }
+  
+  // 延迟退出，确保通知能显示
+  setTimeout(() => {
+    app.quit();
+  }, 1000);
 } else {
   console.log('✅ 获得单实例锁，应用正常启动');
   
   // 当尝试启动第二个实例时，聚焦到第一个实例
   app.on('second-instance', (event, commandLine, workingDirectory) => {
-    console.log('🔄 检测到重复启动，聚焦到现有实例');
+    console.log('');
+    console.log('🔄 检测到重复启动尝试');
     console.log('📋 自动显示剪贴板选择窗口');
+    console.log('💡 应用已在后台运行，无需重复启动');
+    console.log('');
+    
+    // 显示系统通知
+    showDuplicateStartupNotification();
     
     // 如果有剪贴板管理器实例，显示快速选择窗口
     if (global.clipboardManager) {
@@ -25,6 +51,30 @@ if (!gotTheLock) {
       console.log('⚠️  警告：全局剪贴板管理器实例不存在');
     }
   });
+}
+
+// 显示重复启动通知的函数
+function showDuplicateStartupNotification() {
+  const { Notification } = require('electron');
+  
+  if (Notification.isSupported()) {
+    const notification = new Notification({
+      title: '剪贴板管理器',
+      body: '应用已在后台运行中\n使用 Command+Shift+V 打开剪贴板',
+      icon: path.join(__dirname, '../assets/a.png'),
+      silent: false,
+      urgency: 'normal'
+    });
+    
+    notification.on('click', () => {
+      // 点击通知时显示剪贴板选择窗口
+      if (global.clipboardManager) {
+        global.clipboardManager.showQuickSelect();
+      }
+    });
+    
+    notification.show();
+  }
 }
 
 class ClipboardManager {

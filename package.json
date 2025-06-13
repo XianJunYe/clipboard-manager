@@ -1,6 +1,6 @@
 {
   "name": "clipboard-manager",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "一个强大的剪贴板管理工具",
   "main": "src/main.js",
   "scripts": {
@@ -9,7 +9,11 @@
     "build": "electron-builder",
     "pack": "electron-builder --dir",
     "publish": "electron-builder --publish=always",
-    "draft": "electron-builder --publish=never"
+    "draft": "electron-builder --publish=never",
+    "release": "./scripts/release.sh",
+    "release:patch": "./scripts/release.sh patch",
+    "release:minor": "./scripts/release.sh minor",
+    "release:major": "./scripts/release.sh major"
   },
   "keywords": [
     "clipboard",
@@ -48,6 +52,7 @@
     ],
     "mac": {
       "category": "public.app-category.productivity",
+      "helperBundleId": "com.clipboardmanager.app.helper",
       "target": [
         {
           "target": "dmg",

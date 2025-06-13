@@ -260,11 +260,8 @@ class ClipboardManager {
     this.tray.setContextMenu(contextMenu);
     this.tray.setToolTip('剪贴板管理器 - Command+Shift+V');
     
-    // 添加点击事件来测试托盘是否可交互
-    this.tray.on('click', () => {
-      console.log('托盘图标被点击！');
-      this.showQuickSelect();
-    });
+    // 移除左键点击事件，避免误触发窗口弹出
+    // 用户可通过右键菜单或快捷键访问功能
     
     this.tray.on('right-click', () => {
       console.log('托盘图标被右键点击！');

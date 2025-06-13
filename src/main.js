@@ -140,6 +140,11 @@ class ClipboardManager {
       },
       { type: 'separator' },
       {
+        label: '🔍 检查更新',
+        click: () => this.manualCheckForUpdates()
+      },
+      { type: 'separator' },
+      {
         label: '清理重复记录',
         click: () => {
           this.deduplicateHistory();
@@ -580,8 +585,12 @@ class ClipboardManager {
   }
 
   setupAutoUpdater() {
-    // 配置自动更新
-    autoUpdater.checkForUpdatesAndNotify();
+    // 配置自动更新 - 在开发模式下也强制检查更新
+    if (!app.isPackaged) {
+      // 开发模式下的配置
+      autoUpdater.forceDevUpdateConfig = true;
+      console.log('🔧 开发模式：已启用强制更新检查');
+    }
     
     // 监听更新事件
     autoUpdater.on('checking-for-update', () => {
@@ -598,7 +607,8 @@ class ClipboardManager {
     });
     
     autoUpdater.on('error', (err) => {
-      console.log('❌ 自动更新出错:', err);
+      console.log('❌ 自动更新出错:', err.message);
+      console.log('详细错误信息:', err);
     });
     
     autoUpdater.on('download-progress', (progressObj) => {
@@ -612,17 +622,34 @@ class ClipboardManager {
       console.log('✅ 更新下载完成:', info.version);
       console.log('🔄 应用将在下次启动时更新');
       
-      // 可以选择立即重启更新，或者提示用户
-      // autoUpdater.quitAndInstall(); // 立即重启更新
-      
-      // 或者添加到托盘菜单让用户选择
+      // 添加到托盘菜单让用户选择
       this.updateTrayMenuWithUpdate();
     });
     
-    // 每小时检查一次更新
-    setInterval(() => {
-      autoUpdater.checkForUpdatesAndNotify();
-    }, 60 * 60 * 1000);
+    // 不再自动检查更新，只有用户手动点击时才检查
+    console.log('💡 自动更新已配置，可通过托盘菜单手动检查更新');
+  }
+
+  manualCheckForUpdates() {
+    console.log('🔍 手动检查更新...');
+    
+    // 强制检查更新，即使在开发模式下
+    autoUpdater.checkForUpdatesAndNotify().then((result) => {
+      if (result) {
+        console.log('✅ 更新检查完成');
+      }
+    }).catch((error) => {
+      console.log('❌ 更新检查失败:', error.message);
+      
+      // 如果是开发模式，提供更多调试信息
+      if (!app.isPackaged) {
+        console.log('💡 开发模式提示：');
+        console.log('   - 确保 GitHub 仓库存在且有 Releases');
+        console.log('   - 确保 package.json 中的 GitHub 配置正确');
+        console.log('   - 确保网络连接正常');
+        console.log('   - 当前版本:', app.getVersion());
+      }
+    });
   }
 
   updateTrayMenuWithUpdate() {

@@ -1,0 +1,4 @@
+provider: github
+owner: XianJunYe
+repo: clipboard-manager
+updaterCacheDirName: clipboard-manager-updater 

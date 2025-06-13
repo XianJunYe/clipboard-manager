@@ -1,6 +1,6 @@
 {
   "name": "clipboard-manager",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "一个强大的剪贴板管理工具",
   "main": "src/main.js",
   "scripts": {
@@ -30,15 +30,15 @@
   },
   "build": {
     "appId": "com.clipboardmanager.app",
-    "productName": "剪贴板管理器",
+    "productName": "ClipboardManager",
     "directories": {
       "output": "dist"
     },
     "publish": [
       {
         "provider": "github",
-        "owner": "你的GitHub用户名",
-        "repo": "你的仓库名"
+        "owner": "XianJunYe",
+        "repo": "clipboard-manager"
       }
     ],
     "files": [
@@ -55,13 +55,22 @@
             "x64",
             "arm64"
           ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
       "extendInfo": {
         "LSUIElement": true,
         "CFBundleDisplayName": "剪贴板管理器",
         "CFBundleName": "剪贴板管理器"
-      }
+      },
+      "timestamp": false,
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "dmg": {
       "title": "剪贴板管理器安装包",

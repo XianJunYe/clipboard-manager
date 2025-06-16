@@ -75,6 +75,16 @@ class ClipboardManager {
   setupIpcHandlers() {
     ipcMain.handle('paste-item', async (event, content, type) => {
       this.performPaste(content, type);
+      
+      // 判断是否从详细窗口发起的粘贴，如果是则关闭详细窗口，不返回quickSelect
+      if (this.detailWindow && !this.detailWindow.isDestroyed() && 
+          event.sender === this.detailWindow.webContents) {
+        setTimeout(() => {
+          if (this.detailWindow && !this.detailWindow.isDestroyed()) {
+            this.detailWindow.close();
+          }
+        }, 100); // 短暂延迟以确保粘贴操作完成
+      }
     });
 
     ipcMain.handle('close-quick-select', async (event) => {
@@ -83,6 +93,11 @@ class ClipboardManager {
 
     ipcMain.handle('show-detail', async (event) => {
       this.showDetailWindow();
+    });
+
+    // 新增：从详细窗口返回快速选择
+    ipcMain.handle('back-to-quick-select', async (event) => {
+      this.backToQuickSelectFromDetail();
     });
   }
 
@@ -172,20 +187,21 @@ class ClipboardManager {
       this.recordCurrentApp();
       this.isQuickSelectVisible = true;
 
-      // 获取光标位置和显示器信息
+      // 获取光标位置，在光标所在显示器上居中显示
       const cursorPoint = screen.getCursorScreenPoint();
-      const display = screen.getDisplayNearestPoint(cursorPoint);
-      const workArea = display.workAreaSize;
+      const currentDisplay = screen.getDisplayNearestPoint(cursorPoint);
+      const { x: displayX, y: displayY, width: displayWidth, height: displayHeight } = currentDisplay.workArea;
 
       Logger.debug(`光标位置: (${cursorPoint.x}, ${cursorPoint.y})`);
-      Logger.debug(`当前显示器工作区域: x=${workArea.x}, y=${workArea.y}, width=${workArea.width}, height=${workArea.height}`);
+      Logger.debug(`当前显示器工作区域: x=${displayX}, y=${displayY}, width=${displayWidth}, height=${displayHeight}`);
 
       const windowWidth = 500;
       const windowHeight = 400;
-      const windowX = Math.round(cursorPoint.x - windowWidth / 2);
-      const windowY = Math.round(cursorPoint.y - windowHeight / 2);
+      // 在当前显示器上居中显示
+      const windowX = displayX + Math.round((displayWidth - windowWidth) / 2);
+      const windowY = displayY + Math.round((displayHeight - windowHeight) / 2);
 
-      Logger.debug(`窗口在显示器中央位置: (${windowX}, ${windowY})`);
+      Logger.debug(`窗口在当前显示器居中位置: (${windowX}, ${windowY})`);
 
       this.quickSelectWindow = new BrowserWindow({
         width: windowWidth,
@@ -207,7 +223,7 @@ class ClipboardManager {
         }
       });
 
-      this.quickSelectWindow.loadFile('src/quickSelect.html');
+      this.quickSelectWindow.loadFile('src/html/quickSelect.html');
 
       this.quickSelectWindow.on('closed', () => {
         this.isQuickSelectVisible = false;
@@ -347,9 +363,96 @@ class ClipboardManager {
   }
 
   showDetailWindow() {
-    // 详细窗口的实现（保持原有逻辑）
-    Logger.info('显示详细窗口');
-    // TODO: 实现详细窗口
+    // 如果详细窗口已存在，直接聚焦
+    if (this.detailWindow && !this.detailWindow.isDestroyed()) {
+      this.detailWindow.focus();
+      return;
+    }
+
+    try {
+      Logger.info('创建详细窗口...');
+      
+      // 如果是从快速选择窗口调用，先关闭快速选择窗口
+      if (this.isQuickSelectVisible && this.quickSelectWindow) {
+        this.quickSelectWindow.close();
+        // 注意：不要调用closeQuickSelect()，因为那会恢复应用焦点
+        this.isQuickSelectVisible = false;
+        this.quickSelectWindow = null;
+        this.shortcutService.unregisterSelectionShortcuts();
+      }
+
+      // 获取屏幕信息
+      const { screen } = require('electron');
+      const primaryDisplay = screen.getPrimaryDisplay();
+      const { width, height } = primaryDisplay.workAreaSize;
+
+      // 计算窗口大小和位置
+      const windowWidth = Math.min(800, Math.round(width * 0.8));
+      const windowHeight = Math.min(600, Math.round(height * 0.8));
+      const windowX = Math.round((width - windowWidth) / 2);
+      const windowY = Math.round((height - windowHeight) / 2);
+
+      this.detailWindow = new BrowserWindow({
+        width: windowWidth,
+        height: windowHeight,
+        x: windowX,
+        y: windowY,
+        show: false,
+        title: '剪贴板历史记录',
+        resizable: true,
+        minimizable: false,       // 禁用最小化，避免在Dock中显示
+        maximizable: false,       // 禁用最大化
+        alwaysOnTop: true,        // 保持在最前面
+        skipTaskbar: true,        // 不在任务栏显示
+        type: 'panel',            // 设置为面板类型，不会在Dock中显示
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: false,
+          enableRemoteModule: true
+        }
+      });
+
+      this.detailWindow.loadFile('src/html/detailWindow.html');
+
+      this.detailWindow.on('closed', () => {
+        this.detailWindow = null;
+        Logger.debug('详细窗口已关闭');
+      });
+
+      this.detailWindow.webContents.once('dom-ready', () => {
+        // 发送所有历史记录到详细窗口
+        this.detailWindow.webContents.send('clipboard-history-detail', this.clipboardHistory);
+        Logger.debug(`已发送 ${this.clipboardHistory.length} 条历史记录到详细窗口`);
+      });
+
+      this.detailWindow.once('ready-to-show', () => {
+        this.detailWindow.showInactive();  // 使用showInactive避免抢夺焦点
+        // 确保窗口能接收键盘事件
+        this.detailWindow.setAlwaysOnTop(true, 'floating');
+        Logger.success('详细窗口已显示');
+      });
+
+    } catch (error) {
+      Logger.error('创建详细窗口失败:', error.message);
+      if (this.detailWindow) {
+        this.detailWindow = null;
+      }
+    }
+  }
+
+  backToQuickSelectFromDetail() {
+    Logger.info('从详细窗口返回快速选择...');
+    
+    // 关闭详细窗口
+    if (this.detailWindow && !this.detailWindow.isDestroyed()) {
+      this.detailWindow.close();
+    }
+    
+    // 重新显示快速选择窗口
+    setTimeout(() => {
+      // 不需要重新记录当前应用，因为previousApp还保存着
+      this.showQuickSelect();
+    }, 100);
   }
 
   clearHistory() {

@@ -23,7 +23,7 @@ const CONFIG = {
 
   // 托盘相关配置
   tray: {
-    iconPath: '../assets/a.png',
+    iconPath: '../../../assets/a.png',
     iconSize: { width: 16, height: 16 },
     tooltip: '剪贴板管理器 - Command+Shift+V',
   },

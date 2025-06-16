@@ -11,7 +11,11 @@ class TrayService {
   }
 
   create() {
-    const iconPath = path.join(__dirname, AppConfig.get('tray.iconPath'));
+    // 使用相对于src目录的路径（与原始代码保持一致）
+    const iconPath = path.join(__dirname, '../../../assets/a.png');
+    
+    Logger.debug('托盘图标路径:', iconPath);
+    Logger.debug('图标文件是否存在:', fs.existsSync(iconPath));
     
     try {
       const image = this.createTrayImage(iconPath);
@@ -26,6 +30,7 @@ class TrayService {
       return true;
     } catch (error) {
       Logger.error('系统托盘创建失败:', error.message);
+      Logger.error('错误详情:', error);
       return false;
     }
   }
@@ -54,13 +59,11 @@ class TrayService {
       
       return image;
     } catch (error) {
-      Logger.warn('加载自定义图标失败，使用备用方案:', error.message);
+      Logger.warn('加载自定义图标失败:', error.message);
       
-      // 备用方案：显示应用在dock（仅macOS）
-      if (process.platform === 'darwin') {
-        app.dock.show();
-        Logger.info('托盘创建失败，临时显示dock图标');
-      }
+      // 不使用dock作为备用方案，保持应用在后台运行
+      Logger.info('托盘图标加载失败，应用将在后台运行');
+      Logger.info('可通过快捷键 Command+Shift+V 访问功能');
       
       throw error;
     }

@@ -8,40 +8,54 @@ const NotificationService = require('./app/services/NotificationService');
 const logLevel = AppConfig.get('logging.level');
 Logger.setLevel(logLevel);
 
-// 单实例检查
-const gotTheLock = app.requestSingleInstanceLock();
-
-if (!gotTheLock) {
-  // 如果应用已经在运行，显示友好的退出信息
-  Logger.info('');
-  Logger.info('🚫 剪贴板管理器已在运行中');
-  Logger.info('');
-  Logger.info('📋 应用状态：后台运行中');
-  Logger.info('⌨️  快捷键：Command+Shift+V 打开剪贴板选择');
-  Logger.info('🖱️  托盘：点击菜单栏右上角的图标');
-  Logger.info('');
-  Logger.info('💡 无需重复启动，应用已在后台为您服务！');
-  Logger.info('');
-  
-  // 直接退出，不显示通知（因为第一个实例会处理）
-  app.quit();
-} else {
-  Logger.success('获得单实例锁，应用正常启动');
-  
-  // 当尝试启动第二个实例时，聚焦到第一个实例
-  app.on('second-instance', (event, commandLine, workingDirectory) => {
-    Logger.info('');
-    Logger.info('🔄 检测到重复启动尝试');
-    Logger.info('🔔 显示系统通知提醒用户');
-    Logger.info('💡 应用已在后台运行，无需重复启动');
-    Logger.info('');
-    
-    // 只显示系统通知，不自动显示快速选择窗口
-    showDuplicateStartupNotification();
-  });
-  
+// 使用单实例检查
+setupSingleInstance(() => {
   // 初始化应用
   initializeApp();
+});
+
+// 检查是否获取到单例
+function setupSingleInstance(onSingleInstance) {
+  // 单实例检查
+  const gotTheLock = app.requestSingleInstanceLock();
+
+  if (!gotTheLock) {
+    // 如果应用已经在运行，显示友好的退出信息
+    Logger.info('');
+    Logger.info('🚫 剪贴板管理器已在运行中');
+    Logger.info('');
+    Logger.info('📋 应用状态：后台运行中');
+    Logger.info('⌨️  快捷键：Command+Shift+V 打开剪贴板选择');
+    Logger.info('🖱️  托盘：点击菜单栏右上角的图标');
+    Logger.info('');
+    Logger.info('💡 无需重复启动，应用已在后台为您服务！');
+    Logger.info('');
+    
+    // 直接退出，不显示通知（因为第一个实例会处理）
+    app.quit();
+    return false;
+  } else {
+    Logger.success('获得单实例锁，应用正常启动');
+    
+    // 当尝试启动第二个实例时，聚焦到第一个实例
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+      Logger.info('');
+      Logger.info('🔄 检测到重复启动尝试');
+      Logger.info('🔔 显示系统通知提醒用户');
+      Logger.info('💡 应用已在后台运行，无需重复启动');
+      Logger.info('');
+      
+      // 只显示系统通知，不自动显示快速选择窗口
+      showDuplicateStartupNotification();
+    });
+    
+    // 执行传入的回调函数
+    if (typeof onSingleInstance === 'function') {
+      onSingleInstance();
+    }
+    
+    return true;
+  }
 }
 
 // 显示重复启动通知的函数
@@ -60,6 +74,12 @@ async function initializeApp() {
   try {
     // 等待Electron准备就绪
     await app.whenReady();
+    
+    // 在macOS上隐藏Dock图标，让应用完全在后台运行
+    if (process.platform === 'darwin') {
+      app.dock.hide();
+      Logger.debug('已隐藏Dock图标，应用在后台运行');
+    }
     
     Logger.info('🚀 Electron应用已准备就绪');
     
@@ -146,6 +166,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // 导出模块（如果需要）
 module.exports = {
+  setupSingleInstance,
   initializeApp,
   showDuplicateStartupNotification
 }; 

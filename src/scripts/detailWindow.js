@@ -4,6 +4,14 @@ let allClipboardHistory = [];
 let filteredHistory = [];
 
 // 接收剪贴板历史记录
+ipcRenderer.on('clipboard-history-detail', (event, history) => {
+    allClipboardHistory = history;
+    filteredHistory = [...history];
+    renderItems();
+    updateStats();
+});
+
+// 兼容旧的事件名（如果有的话）
 ipcRenderer.on('clipboard-history', (event, history) => {
     allClipboardHistory = history;
     filteredHistory = [...history];
@@ -129,11 +137,3 @@ searchInput.addEventListener('input', (e) => {
     renderItems();
     updateStats();
 });
-
-// 键盘快捷键
-document.addEventListener('keydown', (e) => {
-    if (e.metaKey && e.key === 'f') {
-        e.preventDefault();
-        searchInput.focus();
-    }
-}); 
